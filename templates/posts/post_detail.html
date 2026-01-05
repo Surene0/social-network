@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Пост {{ post.pk }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Кнопка назад -->
+            <a href="{% url 'posts:home' %}" class="btn btn-secondary mb-3">
+                ← Назад к ленте
+            </a>
+            
+            <!-- Пост -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ post.author.email }}</strong>
+                            <small class="text-muted ms-2">
+                                {{ post.created_at|date:"d.m.Y H:i" }}
+                            </small>
+                        </div>
+                        {% if post.author == user %}
+                        <span class="badge bg-info">Ваш пост</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ post.content|linebreaks }}</p>
+                    
+                    {% if post.image %}
+                    <div class="mt-2">
+                        <img src="{{ post.image.url }}" class="img-fluid rounded" 
+                             alt="Изображение поста">
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Лайки -->
+                    <form method="post" action="{% url 'posts:like_post' post.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm {% if user in post.likes.all %}btn-danger{% else %}btn-outline-danger{% endif %} mt-2">
+                            ❤️ Лайк {{ post.likes.count }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Комментарии -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Комментарии ({{ comments.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Форма комментария -->
+                    {% if user.is_authenticated %}
+                    <form method="post" class="mb-3">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <textarea name="content" rows="2" class="form-control" 
+                                      placeholder="Добавить комментарий..." required></textarea>
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p class="text-muted">
+                        <a href="{% url 'admin:login' %}">Войдите</a>, чтобы оставлять комментарии.
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Список комментариев -->
+                    <div class="mt-3">
+                        {% for comment in comments %}
+                        <div class="border-bottom py-2">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ comment.author.email }}</strong>
+                                <small class="text-muted">
+                                    {{ comment.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                            <p class="mb-0">{{ comment.content }}</p>
+                            
+                            <!-- Кнопка удаления -->
+                            {% if user == comment.author or user == post.author %}
+                            <div class="mt-2">
+                                <form method="post" action="{% url 'posts:delete_comment' comment.pk %}" 
+                                      onsubmit="return confirm('Удалить этот комментарий?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Удалить
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
